@@ -1,10 +1,12 @@
 from sqlalchemy import (
     Column, Integer, String, ForeignKey, Date, Enum, Float, Text, UniqueConstraint, Index
 )
-from sqlalchemy.orm import relationship, declarative_base
+from sqlalchemy.orm import relationship, DeclarativeBase
 import enum
+from sqlalchemy.orm import Mapped, mapped_column
 
-Base = declarative_base()
+class Base(DeclarativeBase):
+    pass
 
 class SessionType(str, enum.Enum):
     wod = "WOD"
@@ -88,7 +90,10 @@ class Session(Base):
     id = Column(Integer, primary_key=True)
     name = Column(String(100), nullable=False)
     date = Column(Date, nullable=False)
-    session_type = Column(Enum(SessionType), nullable=False)
+    session_type: Mapped[SessionType] = mapped_column(
+    Enum(SessionType),
+    nullable=False,
+    )
     user_id = Column(Integer, ForeignKey("users.id"), index=True)
     notes = Column(Text)
 
@@ -104,7 +109,10 @@ class Block(Base):
     )
 
     id = Column(Integer, primary_key=True)
-    block_type = Column(Enum(BlockType), nullable=False)
+    block_type: Mapped[BlockType] = mapped_column(
+    Enum(BlockType),
+    nullable=False,
+    )
     duration = Column(Float)
     position = Column(Integer, nullable=False)
     session_id = Column(Integer, ForeignKey("sessions.id"), index=True)
@@ -121,7 +129,10 @@ class Exercise(Base):
     )
 
     id = Column(Integer, primary_key=True)
-    exercise_type = Column(Enum(ExerciseType), nullable=False)
+    exercise_type: Mapped[ExerciseType] = mapped_column(
+    Enum(ExerciseType),
+    nullable=False,
+    )
     weight_kg = Column(Float)
     repetitions = Column(Integer)
     duration_seconds = Column(Float)
