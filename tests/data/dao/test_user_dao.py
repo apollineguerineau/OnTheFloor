@@ -1,5 +1,4 @@
 from src.data.dao.user_dao import UserDAO
-from src.data.models import User
 
 def test_create_user(db_session):
     dao = UserDAO(db_session)

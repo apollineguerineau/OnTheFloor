@@ -1,8 +1,4 @@
-from fastapi.testclient import TestClient
-from sqlalchemy.orm import Session
 
-from src.api.schemas.user import UserCreate
-from src.data.models import User
 
 
 def test_create_user_success(client):

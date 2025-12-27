@@ -1,6 +1,5 @@
 import pytest
 from sqlalchemy.orm import Session
-from src.data.models import User
 from src.services.user_service import UserService
 from src.data.dao.user_dao import UserDAO
 from src.api.schemas.user import UserCreate
