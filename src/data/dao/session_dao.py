@@ -23,17 +23,27 @@ class SessionDAO:
         *,
         session_date: date,
         user_id: int,
-    ) -> Session | None:
+    ) -> list["Session"]:
         stmt = (
             select(Session)
             .where(Session.date == session_date)
             .where(Session.user_id == user_id)
         )
-        return self.db.scalars(stmt).one_or_none()
+        return list(self.db.scalars(stmt).all())
 
     def list_by_user(self, user_id: int) -> list[Session]:
         stmt = select(Session).where(Session.user_id == user_id)
         return list(self.db.scalars(stmt))
+
+    def get_by_location_and_user(self, location_id: int, user_id: int) -> list["Session"]:
+        """
+        Return all sessions for a given location and user.
+        """
+        stmt = select(Session).where(
+            (Session.location_id == location_id) &
+            (Session.user_id == user_id)
+        )
+        return list(self.db.scalars(stmt).all())
 
     def update(self, session: Session) -> Session:
         self.db.commit()
