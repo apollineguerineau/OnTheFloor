@@ -62,7 +62,7 @@ class SessionService:
         if notes is not None:
             session.notes = notes
         if date is not None:
-            session.date = date # type: ignore[attr-defined]
+            session.date = date # type: ignore[assignment]
 
         return self.dao.update(session)
 
