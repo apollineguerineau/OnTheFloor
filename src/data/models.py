@@ -1,5 +1,13 @@
 from sqlalchemy import (
-    Integer, String, ForeignKey, Date, Enum, Float, Text, UniqueConstraint, Index
+    Integer,
+    String,
+    ForeignKey,
+    Date,
+    Enum,
+    Float,
+    Text,
+    UniqueConstraint,
+    Index,
 )
 from sqlalchemy.orm import relationship, DeclarativeBase, Mapped, mapped_column
 import enum
@@ -23,12 +31,14 @@ class SessionType(str, enum.Enum):
     open = "Open"
     team = "Team WOD"
 
+
 class BlockType(str, enum.Enum):
     amrap = "AMRAP"
     emom = "EMOM"
     for_time = "For Time"
     metcon = "Metcon"
     skill = "Skill/Strength"
+
 
 class ExerciseType(str, enum.Enum):
     air_squat = "Air Squat"
@@ -82,6 +92,12 @@ class ExerciseType(str, enum.Enum):
     wall_ball = "Wall Balls"
     wall_walk = "Wall Walk"
 
+
+class LocationType(str, enum.Enum):
+    crossfit = "CrossFit Box"
+    gym = "Gym"
+    none = "None"
+
 # -------------------
 # Models
 # -------------------
@@ -91,7 +107,27 @@ class User(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     username: Mapped[str] = mapped_column(String(50), nullable=False, unique=True)
 
-    sessions: Mapped[list["Session"]] = relationship("Session", back_populates="user")
+    sessions: Mapped[list["Session"]] = relationship(
+        "Session",
+        back_populates="user",
+    )
+
+
+class Location(Base):
+    __tablename__ = "locations"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    name: Mapped[str] = mapped_column(String(100), nullable=False)
+    address: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    location_type: Mapped[LocationType] = mapped_column(
+        Enum(LocationType),
+        nullable=False,
+    )
+
+    sessions: Mapped[list["Session"]] = relationship(
+        "Session",
+        back_populates="location",
+    )
 
 
 class Session(Base):
@@ -100,51 +136,110 @@ class Session(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     name: Mapped[str] = mapped_column(String(100), nullable=False)
     date: Mapped[Date] = mapped_column(Date, nullable=False)
-    session_type: Mapped[SessionType] = mapped_column(Enum(SessionType), nullable=False)
-    user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"), index=True)
+    session_type: Mapped[SessionType] = mapped_column(
+        Enum(SessionType),
+        nullable=False,
+    )
+    user_id: Mapped[int] = mapped_column(
+        Integer,
+        ForeignKey("users.id"),
+        index=True,
+    )
+    location_id: Mapped[int | None] = mapped_column(
+        Integer,
+        ForeignKey("locations.id"),
+        nullable=True,
+        index=True,
+    )
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
 
-    user: Mapped["User"] = relationship("User", back_populates="sessions")
-    blocks: Mapped[list["Block"]] = relationship("Block", back_populates="session", order_by="Block.position")
-    photos: Mapped[list["Photo"]] = relationship("Photo", back_populates="session")
+    user: Mapped["User"] = relationship(
+        "User",
+        back_populates="sessions",
+    )
+    location: Mapped["Location | None"] = relationship(
+        "Location",
+        back_populates="sessions",
+    )
+    blocks: Mapped[list["Block"]] = relationship(
+        "Block",
+        back_populates="session",
+        order_by="Block.position",
+    )
+    photos: Mapped[list["Photo"]] = relationship(
+        "Photo",
+        back_populates="session",
+    )
 
 
 class Block(Base):
     __tablename__ = "blocks"
     __table_args__ = (
-        UniqueConstraint('session_id', 'position', name='uix_session_block_position'),
-        Index('ix_block_position', 'position'),
+        UniqueConstraint(
+            "session_id",
+            "position",
+            name="uix_session_block_position",
+        ),
+        Index("ix_block_position", "position"),
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    block_type: Mapped[BlockType] = mapped_column(Enum(BlockType), nullable=False)
+    block_type: Mapped[BlockType] = mapped_column(
+        Enum(BlockType),
+        nullable=False,
+    )
     duration: Mapped[float | None] = mapped_column(Float, nullable=True)
     position: Mapped[int] = mapped_column(Integer, nullable=False)
-    session_id: Mapped[int] = mapped_column(Integer, ForeignKey("sessions.id"), index=True)
+    session_id: Mapped[int] = mapped_column(
+        Integer,
+        ForeignKey("sessions.id"),
+        index=True,
+    )
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
 
-    session: Mapped["Session"] = relationship("Session", back_populates="blocks")
-    exercises: Mapped[list["Exercise"]] = relationship("Exercise", back_populates="block", order_by="Exercise.position")
+    session: Mapped["Session"] = relationship(
+        "Session",
+        back_populates="blocks",
+    )
+    exercises: Mapped[list["Exercise"]] = relationship(
+        "Exercise",
+        back_populates="block",
+        order_by="Exercise.position",
+    )
 
 
 class Exercise(Base):
     __tablename__ = "exercises"
     __table_args__ = (
-        UniqueConstraint('block_id', 'position', name='uix_block_exercise_position'),
-        Index('ix_exercise_position', 'position'),
+        UniqueConstraint(
+            "block_id",
+            "position",
+            name="uix_block_exercise_position",
+        ),
+        Index("ix_exercise_position", "position"),
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    exercise_type: Mapped[ExerciseType] = mapped_column(Enum(ExerciseType), nullable=False)
+    exercise_type: Mapped[ExerciseType] = mapped_column(
+        Enum(ExerciseType),
+        nullable=False,
+    )
     weight_kg: Mapped[float | None] = mapped_column(Float, nullable=True)
     repetitions: Mapped[int | None] = mapped_column(Integer, nullable=True)
     duration_seconds: Mapped[float | None] = mapped_column(Float, nullable=True)
     distance_meters: Mapped[float | None] = mapped_column(Float, nullable=True)
-    block_id: Mapped[int] = mapped_column(Integer, ForeignKey("blocks.id"), index=True)
+    block_id: Mapped[int] = mapped_column(
+        Integer,
+        ForeignKey("blocks.id"),
+        index=True,
+    )
     position: Mapped[int] = mapped_column(Integer, nullable=False)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
 
-    block: Mapped["Block"] = relationship("Block", back_populates="exercises")
+    block: Mapped["Block"] = relationship(
+        "Block",
+        back_populates="exercises",
+    )
 
 
 class Photo(Base):
@@ -152,8 +247,14 @@ class Photo(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     path: Mapped[str] = mapped_column(String(255), nullable=False)
-    session_id: Mapped[int] = mapped_column(Integer, ForeignKey("sessions.id"), index=True)
+    session_id: Mapped[int] = mapped_column(
+        Integer,
+        ForeignKey("sessions.id"),
+        index=True,
+    )
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
 
-    session: Mapped["Session"] = relationship("Session", back_populates="photos")
-
+    session: Mapped["Session"] = relationship(
+        "Session",
+        back_populates="photos",
+    )
