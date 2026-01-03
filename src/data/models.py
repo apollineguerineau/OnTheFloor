@@ -166,6 +166,11 @@ class Session(Base):
         back_populates="session",
         order_by="Block.position",
     )
+    exercises: Mapped[list["Exercise"]] = relationship(
+    "Exercise",
+    back_populates="session",
+    order_by="Exercise.position",
+    )
     photos: Mapped[list["Photo"]] = relationship(
         "Photo",
         back_populates="session",
@@ -211,35 +216,41 @@ class Block(Base):
 class Exercise(Base):
     __tablename__ = "exercises"
     __table_args__ = (
-        UniqueConstraint(
-            "block_id",
-            "position",
-            name="uix_block_exercise_position",
-        ),
+        UniqueConstraint("block_id", "position", name="uix_block_exercise_position"),
         Index("ix_exercise_position", "position"),
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    exercise_type: Mapped[ExerciseType] = mapped_column(
-        Enum(ExerciseType),
-        nullable=False,
-    )
+    exercise_type: Mapped[ExerciseType] = mapped_column(Enum(ExerciseType), nullable=False)
     weight_kg: Mapped[float | None] = mapped_column(Float, nullable=True)
     repetitions: Mapped[int | None] = mapped_column(Integer, nullable=True)
     duration_seconds: Mapped[float | None] = mapped_column(Float, nullable=True)
     distance_meters: Mapped[float | None] = mapped_column(Float, nullable=True)
-    block_id: Mapped[int] = mapped_column(
+
+    # Relations
+    session_id: Mapped[int] = mapped_column(
         Integer,
-        ForeignKey("blocks.id"),
+        ForeignKey("sessions.id"),
+        nullable=False,
         index=True,
     )
-    position: Mapped[int] = mapped_column(Integer, nullable=False)
+    block_id: Mapped[int | None] = mapped_column(
+        Integer,
+        ForeignKey("blocks.id"),
+        nullable=True,
+        index=True,
+    )
+
+    position: Mapped[int | None] = mapped_column(Integer, nullable=True)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
 
-    block: Mapped["Block"] = relationship(
-        "Block",
-        back_populates="exercises",
-    )
+    session: Mapped["Session"] = relationship("Session", back_populates="exercises")
+    block: Mapped["Block | None"] = relationship("Block", back_populates="exercises")
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        if self.session_id is None:
+            raise ValueError("Exercise must belong to a session")
 
 
 class Photo(Base):
