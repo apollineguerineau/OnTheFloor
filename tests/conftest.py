@@ -3,6 +3,9 @@ import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from fastapi.testclient import TestClient
+from src.services.session_service import SessionService
+from src.data.dao.session_dao import SessionDAO
+from unittest.mock import MagicMock
 
 from src.data.models import Base
 from src.main import app
@@ -26,7 +29,7 @@ def db_session():
         Base.metadata.drop_all(bind=engine)
 
 @pytest.fixture(scope="function")
-def client(db_session):
+def client_app(db_session):
     def override_get_db():
         yield db_session
     app.dependency_overrides[get_db] = override_get_db
@@ -36,3 +39,11 @@ def client(db_session):
 
     app.dependency_overrides.clear()
 
+
+@pytest.fixture
+def mock_dao():
+    return MagicMock(spec=SessionDAO)
+
+@pytest.fixture
+def mock_service(mock_dao):
+    return SessionService(mock_dao)
