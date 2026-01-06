@@ -8,9 +8,11 @@ from unittest.mock import MagicMock
 from src.services.user_service import UserService
 from src.services.session_service import SessionService
 from src.services.location_service import LocationService
+from src.services.block_service import BlockService
 from src.data.dao.session_dao import SessionDAO
 from src.data.dao.user_dao import UserDAO
 from src.data.dao.location_dao import LocationDAO
+from src.data.dao.block_dao import BlockDAO
 
 @pytest.fixture
 def client(monkeypatch):
@@ -42,6 +44,14 @@ def client(monkeypatch):
         lambda db=None: location_mock
     )
     mock_service_instances['location'] = location_mock
+
+    # Mock BlockService
+    block_mock = MagicMock()
+    monkeypatch.setattr(
+        "src.api.routes.block.BlockService",
+        lambda db=None: block_mock
+    )
+    mock_service_instances['block'] = block_mock
 
     return TestClient(app), mock_service_instances
 
@@ -82,6 +92,21 @@ def mock_services_dao(monkeypatch):
     )
     mocks['location'] = location_mock
 
+    # BlockService
+    block_mock = MagicMock()
+    monkeypatch.setattr(
+        "src.services.block_service.BlockDAO",
+        lambda db=None: block_mock
+    )
+    mocks['block'] = block_mock
+
+    block_session_mock = MagicMock()
+    monkeypatch.setattr(
+        "src.services.block_service.SessionService",
+        lambda db=None: block_session_mock
+    )
+    mocks['block_session'] = block_session_mock
+
     return mocks
 
 
@@ -103,6 +128,11 @@ def location_service(mock_services_dao):
     return LocationService(db=mock_services_dao['location'])
 
 @pytest.fixture
+def block_service(mock_services_dao):
+    """BlockService avec DAO mocké."""
+    return BlockService(db=mock_services_dao['block'])
+
+@pytest.fixture
 def mock_dbs():
     """
     Retourne un dictionnaire de MagicMocks représentant les sessions DB, users DB et locations DB.
@@ -111,6 +141,7 @@ def mock_dbs():
         "session": MagicMock(),
         "user": MagicMock(),
         "location": MagicMock(),
+        "block": MagicMock(),
     }
 
 @pytest.fixture
@@ -127,3 +158,8 @@ def user_dao(mock_dbs):
 def location_dao(mock_dbs):
     """LocationDAO avec DB mockée."""
     return LocationDAO(mock_dbs["location"])
+
+@pytest.fixture
+def block_dao(mock_dbs):
+    """BlockDAO avec DB mockée."""
+    return BlockDAO(mock_dbs["block"])
