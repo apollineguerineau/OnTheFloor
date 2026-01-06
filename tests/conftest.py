@@ -9,10 +9,12 @@ from src.services.user_service import UserService
 from src.services.session_service import SessionService
 from src.services.location_service import LocationService
 from src.services.block_service import BlockService
+from src.services.exercise_service import ExerciseService
 from src.data.dao.session_dao import SessionDAO
 from src.data.dao.user_dao import UserDAO
 from src.data.dao.location_dao import LocationDAO
 from src.data.dao.block_dao import BlockDAO
+from src.data.dao.exercise_dao import ExerciseDAO
 
 @pytest.fixture
 def client(monkeypatch):
@@ -52,6 +54,14 @@ def client(monkeypatch):
         lambda db=None: block_mock
     )
     mock_service_instances['block'] = block_mock
+
+    # Mock ExerciseService
+    exercise_mock = MagicMock()
+    monkeypatch.setattr(
+        "src.api.routes.exercise.ExerciseService",
+        lambda db=None: exercise_mock
+    )
+    mock_service_instances['exercise'] = exercise_mock
 
     return TestClient(app), mock_service_instances
 
@@ -107,6 +117,28 @@ def mock_services_dao(monkeypatch):
     )
     mocks['block_session'] = block_session_mock
 
+    block_exercise_mock = MagicMock()
+    monkeypatch.setattr(
+        "src.services.block_service.ExerciseDAO",
+        lambda db=None: block_exercise_mock
+    )
+    mocks['block_exercise'] = block_exercise_mock
+
+    # ExerciseService
+    exercise_mock = MagicMock()
+    monkeypatch.setattr(
+        "src.services.exercise_service.ExerciseDAO",
+        lambda db=None: exercise_mock
+    )
+    mocks['exercise'] = exercise_mock
+
+    exercise_block_mock = MagicMock()
+    monkeypatch.setattr(
+        "src.services.exercise_service.BlockDAO",
+        lambda db=None: exercise_block_mock
+    )
+    mocks['exercise_block'] = exercise_block_mock
+
     return mocks
 
 
@@ -133,6 +165,11 @@ def block_service(mock_services_dao):
     return BlockService(db=mock_services_dao['block'])
 
 @pytest.fixture
+def exercise_service(mock_services_dao):
+    """ExerciseService avec DAO mocké."""
+    return ExerciseService(db=mock_services_dao['exercise'])
+
+@pytest.fixture
 def mock_dbs():
     """
     Retourne un dictionnaire de MagicMocks représentant les sessions DB, users DB et locations DB.
@@ -142,6 +179,7 @@ def mock_dbs():
         "user": MagicMock(),
         "location": MagicMock(),
         "block": MagicMock(),
+        "exercise": MagicMock(),
     }
 
 @pytest.fixture
@@ -163,3 +201,8 @@ def location_dao(mock_dbs):
 def block_dao(mock_dbs):
     """BlockDAO avec DB mockée."""
     return BlockDAO(mock_dbs["block"])
+
+@pytest.fixture
+def exercise_dao(mock_dbs):
+    """ExerciseDAO avec DB mockée."""
+    return ExerciseDAO(mock_dbs["exercise"])
