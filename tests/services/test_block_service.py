@@ -14,13 +14,18 @@ def test_create_block_with_position(block_service, mock_services_dao):
 
     session_service.get_session.return_value = MagicMock(id=1)
 
-    # Existing items
     existing_block = MagicMock(id=1, position=0)
     free_exercise = MagicMock(id=2, position=1, block_id=None)
 
     block_dao.list_by_session.return_value = [existing_block]
     exercise_dao.list_by_session.return_value = [free_exercise]
 
+    # ⬇️ AJOUTS
+    block_dao.count_by_session.return_value = 1
+    exercise_dao.count_free_by_session.return_value = 1
+
+    block_dao.update.side_effect = lambda b: b
+    exercise_dao.update.side_effect = lambda e: e
     block_dao.create.side_effect = lambda b: b
 
     result = block_service.create_block(
@@ -29,7 +34,6 @@ def test_create_block_with_position(block_service, mock_services_dao):
         position=1,
     )
 
-    # Existing items shifted
     assert free_exercise.position == 2
     exercise_dao.update.assert_called_once_with(free_exercise)
 
@@ -57,32 +61,32 @@ def test_update_block_position_with_shifts(block_service, mock_services_dao):
     block_dao = mock_services_dao["block"]
     exercise_dao = mock_services_dao["block_exercise"]
 
-    # Block to update
     block = MagicMock(id=1, session_id=1, position=0)
     block_dao.get_by_id.return_value = block
     block_dao.update.side_effect = lambda b: b
 
-    # Other items in the session
     other_block = MagicMock(id=2, position=1)
     free_exercise = MagicMock(id=3, position=2, block_id=None)
 
     block_dao.list_by_session.return_value = [block, other_block]
     exercise_dao.list_by_session.return_value = [free_exercise]
 
-    # Act
+    # ⬇️ AJOUTS
+    block_dao.count_by_session.return_value = 2
+    exercise_dao.count_free_by_session.return_value = 1
+
+    exercise_dao.update.side_effect = lambda e: e
+
     result = block_service.update_block(
         block_id=1,
         position=1,
     )
 
-    # Assert final positions
     assert block.position == 1
     assert other_block.position == 0
     assert free_exercise.position == 2
 
     assert result == block
-
-
 
 def test_update_block_not_found(block_service, mock_services_dao):
     block_dao = mock_services_dao["block"]

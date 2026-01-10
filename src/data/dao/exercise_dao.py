@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session as DBSession
-from sqlalchemy import select
+from sqlalchemy import select, func
 
 from src.data.models import Exercise, Block
 
@@ -46,5 +46,24 @@ class ExerciseDAO:
     def validate_block_session(self, block_id: int, session_id: int) -> bool:
         block = self.db.get(Block, block_id)
         return block is not None and block.session_id == session_id
+    
+    def count_free_by_session(self, session_id: int) -> int:
+        return self.db.scalars(
+            select(func.count())
+            .select_from(Exercise)
+            .where(
+                Exercise.session_id == session_id,
+                Exercise.block_id.is_(None),
+            )
+        ).one()
+
+
+    def count_by_block(self, block_id: int) -> int:
+        return self.db.scalars(
+            select(func.count())
+            .select_from(Exercise)
+            .where(Exercise.block_id == block_id)
+        ).one()
+
 
 

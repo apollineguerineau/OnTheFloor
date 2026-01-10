@@ -76,3 +76,27 @@ def test_validate_block_session_false(exercise_dao, mock_dbs):
     result = exercise_dao.validate_block_session(2, 1)
     mock_db.get.assert_called_once_with(Block, 2)
     assert result is False
+
+def test_count_free_by_session(exercise_dao, mock_dbs):
+    mock_db = mock_dbs["exercise"]
+
+    mock_scalars = MagicMock()
+    mock_scalars.one.return_value = 3
+    mock_db.scalars.return_value = mock_scalars
+
+    result = exercise_dao.count_free_by_session(1)
+    assert result == 3
+
+
+def test_count_by_block(exercise_dao, mock_dbs):
+    mock_db = mock_dbs["exercise"]
+
+    mock_scalars = MagicMock()
+    mock_scalars.one.return_value = 4
+    mock_db.scalars.return_value = mock_scalars
+
+    result = exercise_dao.count_by_block(2)
+    assert result == 4
+
+
+

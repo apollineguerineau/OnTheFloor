@@ -70,14 +70,13 @@ class ExerciseService:
         # Handle positions
         # -------------------------
         if block_id is not None:
+            total = self.dao.count_by_block(block_id)
             # Auto-assign position_in_block if not provided
             if position_in_block is None:
-                max_pos = max(
-                    (ex.position_in_block or -1 for ex in self.dao.list_by_block(block_id)),
-                    default=-1
-                )
-                position_in_block = max_pos + 1
+                position_in_block = total
             else:
+                if position_in_block < 0 or position_in_block > total:
+                    raise ValueError("Invalid position_in_block")
                 # Shift existing exercises in the block to make room
                 for ex in sorted(
                     self.dao.list_by_block(block_id),
@@ -89,20 +88,27 @@ class ExerciseService:
                         ex.position_in_block = pos + 1
                         self.dao.update(ex)
         else:
+            total_items = (
+                        self.block_dao.count_by_session(session_id)
+                        + self.dao.count_free_by_session(session_id)
+                    )
             # Free exercise in session
             if position is None:
-                raise ValueError("Please provide a global position for a free exercise")
-            items_to_shift = [
-                ex for ex in self.dao.list_by_session(session_id) if ex.position is not None
-            ] + self.block_dao.list_by_session(session_id)
-            for item in sorted(items_to_shift, key=lambda e: e.position or 0, reverse=True):
-                pos = item.position or 0
-                if pos >= position:
-                    item.position = pos + 1
-                    if isinstance(item, Exercise):
-                        self.dao.update(item)
-                    elif isinstance(item, Block):
-                        self.block_dao.update(item)
+                position = total_items
+            else : 
+                if position < 0 or position > total_items:
+                    raise ValueError("Invalid exercise position")
+                items_to_shift = [
+                    ex for ex in self.dao.list_by_session(session_id) if ex.position is not None
+                ] + self.block_dao.list_by_session(session_id)
+                for item in sorted(items_to_shift, key=lambda e: e.position or 0, reverse=True):
+                    pos = item.position or 0
+                    if pos >= position:
+                        item.position = pos + 1
+                        if isinstance(item, Exercise):
+                            self.dao.update(item)
+                        elif isinstance(item, Block):
+                            self.block_dao.update(item)
 
         # Create the exercise
         exercise = Exercise(
@@ -156,6 +162,9 @@ class ExerciseService:
         # Update position_in_block
         # -------------------------
         if position_in_block is not None and position_in_block != old_pos_in_block:
+            total = self.dao.count_by_block(block_id or 0) - 1
+            if position_in_block < 0 or position_in_block > total:
+                raise ValueError("Invalid position_in_block")
             for ex in sorted(
                 (ex for ex in self.dao.list_by_session(session_id)
                  if ex.id != exercise.id and ex.block_id == block_id),
@@ -174,6 +183,13 @@ class ExerciseService:
         # Update global position for free exercise
         # -------------------------
         if position is not None and position != old_pos:
+            total_items = (
+                self.block_dao.count_by_session(session_id)
+                + self.dao.count_free_by_session(session_id)
+                - 1  # l'exercice existe déjà
+            )
+            if position < 0 or position > total_items:
+                raise ValueError("Invalid exercise position")
             items_to_shift = [
                 ex for ex in self.dao.list_by_session(session_id) if ex.position is not None
             ] + self.block_dao.list_by_session(session_id)

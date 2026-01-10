@@ -4,7 +4,7 @@ from src.data.models import BlockType
 
 class BlockCreate(BaseModel):
     block_type: BlockType = Field(..., description="Type of the block")
-    position: int = Field(..., description="Position of the block within the session")
+    position: int| None = Field(None, description="Position of the block within the session")
     session_id: int = Field(..., description="ID of the session this block belongs to")
     duration: float | None = Field(
         None,

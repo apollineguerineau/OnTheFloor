@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session as DBSession
-from sqlalchemy import select
+from sqlalchemy import select, func
 
 from src.data.models import Block
 
@@ -18,7 +18,11 @@ class BlockDAO:
         return self.db.get(Block, block_id)
 
     def list_by_session(self, session_id: int) -> list[Block]:
-        stmt = select(Block).where(Block.session_id == session_id)
+        stmt = (
+                select(Block)
+                .where(Block.session_id == session_id)
+                .order_by(Block.position)
+            )
         return list(self.db.scalars(stmt))
 
     def update(self, block: Block) -> Block:
@@ -29,3 +33,12 @@ class BlockDAO:
     def delete(self, block: Block) -> None:
         self.db.delete(block)
         self.db.commit()
+    
+    def count_by_session(self, session_id: int) -> int:
+        return self.db.scalars(
+            select(func.count())
+            .select_from(Block)
+            .where(Block.session_id == session_id)
+        ).one()
+    
+

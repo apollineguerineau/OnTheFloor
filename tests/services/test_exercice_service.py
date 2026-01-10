@@ -6,8 +6,12 @@ from src.data.models import Exercise, ExerciseType
 # -------------------------
 def test_create_exercise_free(exercise_service, mock_services_dao):
     mock_dao = mock_services_dao['exercise']
+    mock_block_dao = mock_services_dao['exercise_block']
 
-    # Free exercise (not in block)
+    # ⬇️ important
+    mock_block_dao.count_by_session.return_value = 0
+    mock_dao.count_free_by_session.return_value = 0
+
     result_exercise = Exercise(
         id=1,
         session_id=1,
@@ -27,6 +31,7 @@ def test_create_exercise_free(exercise_service, mock_services_dao):
 
     mock_dao.create.assert_called_once()
     assert result == result_exercise
+
 
 def test_create_exercise_in_block(exercise_service, mock_services_dao):
     mock_dao = mock_services_dao['exercise']
@@ -57,9 +62,6 @@ def test_create_exercise_in_block(exercise_service, mock_services_dao):
 # UPDATE
 # -------------------------
 def test_update_exercise_free_position(exercise_service, mock_services_dao):
-    """
-    Update a free exercise's position, ensuring other free exercises and blocks are shifted
-    """
     mock_dao = mock_services_dao['exercise']
     mock_block_dao = mock_services_dao['exercise_block']
 
@@ -68,14 +70,16 @@ def test_update_exercise_free_position(exercise_service, mock_services_dao):
     )
     mock_dao.get_by_id.return_value = exercise
 
-    # Simulate other free exercises and blocks
     other_ex = MagicMock(id=2, block_id=None, position=1)
     block = MagicMock(id=3, position=2)
 
     mock_dao.list_by_session.return_value = [exercise, other_ex]
     mock_block_dao.list_by_session.return_value = [block]
 
-    # ✅ Make the update return the same object to avoid MagicMock mismatch
+    # ⬇️ important
+    mock_block_dao.count_by_session.return_value = 1
+    mock_dao.count_free_by_session.return_value = 2
+
     mock_dao.update.side_effect = lambda ex: ex
     mock_block_dao.update.side_effect = lambda b: b
 
@@ -84,15 +88,12 @@ def test_update_exercise_free_position(exercise_service, mock_services_dao):
         position=2
     )
 
-    # Check that positions are shifted
     assert exercise.position == 2
     assert result == exercise
 
 
+
 def test_update_exercise_in_block_position(exercise_service, mock_services_dao):
-    """
-    Update an exercise's position inside a block and ensure only block positions are affected
-    """
     mock_dao = mock_services_dao['exercise']
 
     block_id = 1
@@ -102,7 +103,11 @@ def test_update_exercise_in_block_position(exercise_service, mock_services_dao):
     ex_in_block = MagicMock(id=2, block_id=block_id, position_in_block=1)
 
     mock_dao.get_by_id.return_value = exercise
-    mock_dao.list_by_session.return_value = [exercise, ex_in_block]
+    mock_dao.list_by_block.return_value = [exercise, ex_in_block]
+
+    # ⬇️ important
+    mock_dao.count_by_block.return_value = 2
+
     mock_dao.update.side_effect = lambda ex: ex
 
     result = exercise_service.update_exercise(
@@ -112,6 +117,7 @@ def test_update_exercise_in_block_position(exercise_service, mock_services_dao):
 
     assert exercise.position_in_block == 1
     assert result.id == 1
+
 
 # -------------------------
 # DELETE
