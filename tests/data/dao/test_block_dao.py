@@ -60,3 +60,13 @@ def test_delete(block_dao, mock_dbs):
 
     mock_db.delete.assert_called_once_with(block)
     mock_db.commit.assert_called_once()
+
+def test_count_by_session(block_dao, mock_dbs):
+    mock_db = mock_dbs["block"]
+
+    mock_scalars = MagicMock()
+    mock_scalars.one.return_value = 2
+    mock_db.scalars.return_value = mock_scalars
+
+    result = block_dao.count_by_session(session_id=1)
+    assert result == 2

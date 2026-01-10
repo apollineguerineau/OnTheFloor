@@ -68,10 +68,16 @@ class BlockService:
         if not session:
             raise ValueError("Session not found")
 
-        # Auto-assign position if not provided
+        total_items = (
+            self.block_dao.count_by_session(session_id)
+            + self.exercise_dao.count_free_by_session(session_id)
+        )
+
         if position is None:
-            raise ValueError("Please provide a position for the block.")
+            position = total_items
         else:
+            if position < 0 or position > total_items:
+                raise ValueError("Invalid block position")
             # Shift existing blocks and free exercises to make room
             items_to_shift = [
                 b for b in self.block_dao.list_by_session(session_id)
@@ -119,6 +125,14 @@ class BlockService:
         old_position = block.position
 
         if position is not None and position != old_position:
+            total_items = (
+                self.block_dao.count_by_session(session_id)
+                + self.exercise_dao.count_free_by_session(session_id)
+                - 1
+            )
+
+            if position < 0 or position > total_items:
+                raise ValueError("Invalid block position")
             items_to_shift = [
                 ex for ex in self.exercise_dao.list_by_session(session_id) if ex.position is not None
             ] + self.block_dao.list_by_session(session_id)
