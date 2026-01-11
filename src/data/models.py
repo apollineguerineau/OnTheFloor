@@ -162,18 +162,21 @@ class Session(Base):
         back_populates="sessions",
     )
     blocks: Mapped[list["Block"]] = relationship(
-        "Block",
-        back_populates="session",
-        order_by="Block.position",
+    "Block",
+    back_populates="session",
+    order_by="Block.position",
+    cascade="all, delete-orphan",
     )
     exercises: Mapped[list["Exercise"]] = relationship(
     "Exercise",
     back_populates="session",
     order_by="Exercise.position",
+    cascade="all, delete-orphan",
     )
     photos: Mapped[list["Photo"]] = relationship(
         "Photo",
         back_populates="session",
+        cascade="all, delete-orphan",
     )
 
 
@@ -197,7 +200,7 @@ class Block(Base):
     position: Mapped[int] = mapped_column(Integer, nullable=False)
     session_id: Mapped[int] = mapped_column(
         Integer,
-        ForeignKey("sessions.id"),
+        ForeignKey("sessions.id", ondelete="CASCADE"),
         index=True,
     )
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
@@ -210,6 +213,7 @@ class Block(Base):
         "Exercise",
         back_populates="block",
         order_by="Exercise.position",
+        cascade="all, delete-orphan",
     )
 
 
@@ -240,13 +244,13 @@ class Exercise(Base):
 
     # Relations
     session_id: Mapped[int] = mapped_column(
-        ForeignKey("sessions.id"),
+        ForeignKey("sessions.id", ondelete="CASCADE"),
         nullable=False,
         index=True,
     )
 
     block_id: Mapped[int | None] = mapped_column(
-        ForeignKey("blocks.id"),
+        ForeignKey("blocks.id", ondelete="CASCADE"),
         nullable=True,
         index=True,
     )
@@ -297,7 +301,7 @@ class Photo(Base):
     path: Mapped[str] = mapped_column(String(255), nullable=False)
     session_id: Mapped[int] = mapped_column(
         Integer,
-        ForeignKey("sessions.id"),
+        ForeignKey("sessions.id", ondelete="CASCADE"),
         index=True,
     )
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
