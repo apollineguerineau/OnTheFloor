@@ -1,17 +1,19 @@
-def test_create_user_success(client):
+from uuid import UUID
+
+def test_create_user_success(client, user_id):
     client_app, mocks = client
     payload = {"username": "john"}
 
-    mocks["user"].create_user.return_value = {"id": 1, "username": "john"}
+    mocks["user"].create_user.return_value = {"id":user_id, "username": "john"}
 
     response = client_app.post("/users/", json=payload)
 
     assert response.status_code == 200
-    assert response.json() == {"id": 1, "username": "john"}
+    assert response.json() == {"id":user_id, "username": "john"}
     mocks["user"].create_user.assert_called_once()
 
 
-def test_create_user_already_exists(client):
+def test_create_user_already_exists(client, user_id):
     client_app, mocks = client
     payload = {"username": "john"}
 
@@ -24,25 +26,25 @@ def test_create_user_already_exists(client):
     mocks["user"].create_user.assert_called_once()
 
 
-def test_get_user_found(client):
+def test_get_user_found(client, user_id):
     client_app, mocks = client
-    mocks["user"].get_user.return_value = {"id": 1, "username": "alice"}
+    mocks["user"].get_user.return_value = {"id":user_id, "username": "alice"}
 
-    response = client_app.get("/users/1")
+    response = client_app.get(f"/users/{user_id}")
 
     assert response.status_code == 200
-    assert response.json() == {"id": 1, "username": "alice"}
-    mocks["user"].get_user.assert_called_once_with(1)
+    assert response.json() == {"id":user_id, "username": "alice"}
+    mocks["user"].get_user.assert_called_once_with(UUID(user_id))
 
 
-def test_get_user_not_found(client):
+def test_get_user_not_found(client, user_id):
     client_app, mocks = client
     mocks["user"].get_user.return_value = None
 
-    response = client_app.get("/users/999")
+    response = client_app.get(f"/users/{user_id}")
 
     assert response.status_code == 404
     assert response.json()["detail"] == "User not found"
-    mocks["user"].get_user.assert_called_once_with(999)
+    mocks["user"].get_user.assert_called_once_with(UUID(user_id))
 
 

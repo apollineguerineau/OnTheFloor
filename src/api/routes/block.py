@@ -8,6 +8,7 @@ from src.api.schemas.block import (
     BlockUpdate,
 )
 from src.services.block_service import BlockService
+import uuid
 
 router = APIRouter(prefix="/blocks", tags=["blocks"])
 
@@ -24,7 +25,7 @@ def create_block(
 
 
 @router.get("/{block_id}", response_model=BlockRead)
-def get_block(block_id: int, db: DBSession = Depends(get_db)):
+def get_block(block_id: uuid.UUID, db: DBSession = Depends(get_db)):
     block = BlockService(db).get_block(block_id)
     if not block:
         raise HTTPException(status_code=404, detail="Block not found")
@@ -33,7 +34,7 @@ def get_block(block_id: int, db: DBSession = Depends(get_db)):
 
 @router.get("/session/{session_id}", response_model=list[BlockRead])
 def list_blocks_by_session(
-    session_id: int,
+    session_id: uuid.UUID,
     db: DBSession = Depends(get_db),
 ):
     return BlockService(db).list_blocks_by_session(session_id)
@@ -41,7 +42,7 @@ def list_blocks_by_session(
 
 @router.patch("/{block_id}", response_model=BlockRead)
 def update_block(
-    block_id: int,
+    block_id: uuid.UUID,
     payload: BlockUpdate,
     db: DBSession = Depends(get_db),
 ):
@@ -55,7 +56,7 @@ def update_block(
 
 
 @router.delete("/{block_id}", status_code=204)
-def delete_block(block_id: int, db: DBSession = Depends(get_db)):
+def delete_block(block_id: uuid.UUID, db: DBSession = Depends(get_db)):
     try:
         BlockService(db).delete_block(block_id)
     except ValueError as e:

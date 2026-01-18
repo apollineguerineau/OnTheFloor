@@ -1,5 +1,6 @@
 from sqlalchemy.orm import Session as DBSession
 from sqlalchemy import select, func
+import uuid
 
 from src.data.models import Block
 
@@ -14,10 +15,10 @@ class BlockDAO:
         self.db.refresh(block)
         return block
 
-    def get_by_id(self, block_id: int) -> Block | None:
+    def get_by_id(self, block_id: uuid.UUID) -> Block | None:
         return self.db.get(Block, block_id)
 
-    def list_by_session(self, session_id: int) -> list[Block]:
+    def list_by_session(self, session_id: uuid.UUID) -> list[Block]:
         stmt = (
                 select(Block)
                 .where(Block.session_id == session_id)
@@ -34,7 +35,7 @@ class BlockDAO:
         self.db.delete(block)
         self.db.commit()
     
-    def count_by_session(self, session_id: int) -> int:
+    def count_by_session(self, session_id: uuid.UUID) -> int:
         return self.db.scalars(
             select(func.count())
             .select_from(Block)

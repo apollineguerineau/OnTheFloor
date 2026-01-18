@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from src.api.deps import get_db
 from src.api.schemas.user import UserCreate, UserRead
 from src.services.user_service import UserService
+import uuid
 
 router = APIRouter(prefix="/users", tags=["users"])
 
@@ -19,7 +20,7 @@ def create_user(
 
 
 @router.get("/{user_id}", response_model=UserRead)
-def get_user(user_id: int, db: Session = Depends(get_db)):
+def get_user(user_id: uuid.UUID, db: Session = Depends(get_db)):
     user = UserService(db).get_user(user_id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")

@@ -1,11 +1,11 @@
+from uuid import UUID
 
-
-def test_create_exercise(client):
+def test_create_exercise(client, session_id, exercise_id):
     client_app, mocks = client
 
     payload = {
         "exercise_type": "Deadlift",
-        "session_id": 1,
+        "session_id": session_id,
         "position": 0,
         "weight_kg": 50.0,
         "repetitions": 10,
@@ -13,9 +13,9 @@ def test_create_exercise(client):
     }
 
     mocks["exercise"].create_exercise.return_value = {
-        "id": 1,
+        "id": exercise_id,
         "exercise_type": "Deadlift",
-        "session_id": 1,
+        "session_id": session_id,
         "position": 0,
         "block_id": None,
         "weight_kg": 50.0,
@@ -32,13 +32,13 @@ def test_create_exercise(client):
     assert response.json() == mocks["exercise"].create_exercise.return_value
 
 
-def test_create_exercise_session_not_found(client):
+def test_create_exercise_session_not_found(client, session_id):
     client_app, mocks = client
     mocks["exercise"].create_exercise.side_effect = ValueError("Session not found")
 
     payload = {
         "exercise_type": "Deadlift",
-        "session_id": 99
+        "session_id": session_id
     }
 
     response = client_app.post("/exercises/", json=payload)
@@ -47,13 +47,13 @@ def test_create_exercise_session_not_found(client):
     assert response.json()["detail"] == "Session not found"
 
 
-def test_get_exercise_found(client):
+def test_get_exercise_found(client, session_id, exercise_id):
     client_app, mocks = client
 
     mock_exercise = {
-        "id": 1,
+        "id": exercise_id,
         "exercise_type": "Deadlift",
-        "session_id": 1,
+        "session_id": session_id,
         "block_id": None,
         "position": 0,
         "position_in_block": None,
@@ -66,30 +66,30 @@ def test_get_exercise_found(client):
 
     mocks["exercise"].get_exercise.return_value = mock_exercise
 
-    response = client_app.get("/exercises/1")
+    response = client_app.get(f"/exercises/{exercise_id}")
 
     assert response.status_code == 200
     assert response.json() == mock_exercise
 
 
-def test_get_exercise_not_found(client):
+def test_get_exercise_not_found(client,exercise_id):
     client_app, mocks = client
     mocks["exercise"].get_exercise.return_value = None
 
-    response = client_app.get("/exercises/999")
+    response = client_app.get(f"/exercises/{exercise_id}")
 
     assert response.status_code == 404
     assert response.json()["detail"] == "Exercise not found"
 
 
-def test_list_exercises_by_session(client):
+def test_list_exercises_by_session(client, session_id, block_id, exercise_id, other_exercise_id):
     client_app, mocks = client
 
     mock_exercises = [
         {
-            "id": 1,
+            "id": exercise_id,
             "exercise_type": "Deadlift",
-            "session_id": 1,
+            "session_id": session_id,
             "block_id": None,
             "position": 0,
             "position_in_block": None,
@@ -100,10 +100,10 @@ def test_list_exercises_by_session(client):
             "notes": None
         },
         {
-            "id": 2,
+            "id": other_exercise_id,
             "exercise_type": "Deadlift",
-            "session_id": 1,
-            "block_id": 1,
+            "session_id": session_id,
+            "block_id": block_id,
             "position": None,
             "position_in_block": 0,
             "weight_kg": None,
@@ -116,13 +116,13 @@ def test_list_exercises_by_session(client):
 
     mocks["exercise"].list_by_session.return_value = mock_exercises
 
-    response = client_app.get("/exercises/session/1")
+    response = client_app.get(f"/exercises/session/{session_id}")
 
     assert response.status_code == 200
     assert response.json() == mock_exercises
 
 
-def test_update_exercise_success(client):
+def test_update_exercise_success(client, session_id,exercise_id):
     client_app, mocks = client
 
     payload = {
@@ -131,9 +131,9 @@ def test_update_exercise_success(client):
     }
 
     mock_updated = {
-        "id": 1,
+        "id": exercise_id,
         "exercise_type": "Deadlift",
-        "session_id": 1,
+        "session_id": session_id,
         "block_id": None,
         "position": 2,
         "position_in_block": None,
@@ -146,36 +146,36 @@ def test_update_exercise_success(client):
 
     mocks["exercise"].update_exercise.return_value = mock_updated
 
-    response = client_app.patch("/exercises/1", json=payload)
+    response = client_app.patch(f"/exercises/{exercise_id}", json=payload)
 
     assert response.status_code == 200
     assert response.json() == mock_updated
 
 
-def test_update_exercise_not_found(client):
+def test_update_exercise_not_found(client,exercise_id):
     client_app, mocks = client
     mocks["exercise"].update_exercise.side_effect = ValueError("Exercise not found")
 
-    response = client_app.patch("/exercises/999", json={"position": 1})
+    response = client_app.patch(f"/exercises/{exercise_id}", json={"position": 1})
 
     assert response.status_code == 404
     assert response.json()["detail"] == "Exercise not found"
 
 
-def test_delete_exercise_success(client):
+def test_delete_exercise_success(client,exercise_id):
     client_app, mocks = client
 
-    response = client_app.delete("/exercises/1")
+    response = client_app.delete(f"/exercises/{exercise_id}")
 
     assert response.status_code == 204
-    mocks["exercise"].delete_exercise.assert_called_once_with(1)
+    mocks["exercise"].delete_exercise.assert_called_once_with(UUID(exercise_id))
 
 
-def test_delete_exercise_not_found(client):
+def test_delete_exercise_not_found(client,exercise_id):
     client_app, mocks = client
     mocks["exercise"].delete_exercise.side_effect = ValueError("Exercise not found")
 
-    response = client_app.delete("/exercises/999")
+    response = client_app.delete(f"/exercises/{exercise_id}")
 
     assert response.status_code == 404
     assert response.json()["detail"] == "Exercise not found"

@@ -4,6 +4,7 @@ from src.data.dao.block_dao import BlockDAO
 from src.data.models import Block, BlockType, Exercise
 from src.services.session_service import SessionService
 from src.data.dao.exercise_dao import ExerciseDAO
+import uuid
 
 
 class BlockService:
@@ -18,14 +19,14 @@ class BlockService:
     # -------------------------
     # List / Get
     # -------------------------
-    def get_block(self, block_id: int) -> Block | None:
+    def get_block(self, block_id: uuid.UUID) -> Block | None:
         """
         Retrieve a block by its ID.
         Returns None if not found.
         """
         return self.block_dao.get_by_id(block_id)
 
-    def list_blocks_by_session(self, session_id: int) -> list[Block]:
+    def list_blocks_by_session(self, session_id: uuid.UUID) -> list[Block]:
         """
         List all blocks for a session, ordered by their position.
         """
@@ -54,7 +55,7 @@ class BlockService:
         self,
         *,
         block_type: BlockType,
-        session_id: int,
+        session_id: uuid.UUID,
         position: int | None = None,
         duration: float | None = None,
         notes: str | None = None,
@@ -106,7 +107,7 @@ class BlockService:
     # -------------------------
     def update_block(
         self,
-        block_id: int,
+        block_id: uuid.UUID,
         *,
         block_type: BlockType | None = None,
         position: int | None = None,
@@ -161,7 +162,7 @@ class BlockService:
     # -------------------------
     # Delete
     # -------------------------
-    def delete_block(self, block_id: int) -> None:
+    def delete_block(self, block_id: uuid.UUID) -> None:
         """
         Delete a block and shift positions of remaining blocks and free exercises.
         """

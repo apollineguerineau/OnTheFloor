@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 from src.data.models import Location
-
+import uuid
 
 class LocationDAO:
     def __init__(self, db: Session):
@@ -15,7 +15,7 @@ class LocationDAO:
         self.db.refresh(location)
         return location
 
-    def get_by_id(self, location_id: int) -> Location | None:
+    def get_by_id(self, location_id: uuid.UUID) -> Location | None:
         """
         Retrieve a Location by its primary key.
         """

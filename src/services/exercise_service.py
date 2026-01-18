@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session as DBSession
 from src.data.dao.exercise_dao import ExerciseDAO
 from src.data.dao.block_dao import BlockDAO
 from src.data.models import Exercise, ExerciseType, Block
+import uuid
 
 
 class ExerciseService:
@@ -16,19 +17,19 @@ class ExerciseService:
     # -------------------------
     # List / Get
     # -------------------------
-    def list_by_session(self, session_id: int) -> list[Exercise]:
+    def list_by_session(self, session_id: uuid.UUID) -> list[Exercise]:
         """
         List all exercises in a session, ordered by their global position.
         """
         return self.dao.list_by_session(session_id)
 
-    def list_by_block(self, block_id: int) -> list[Exercise]:
+    def list_by_block(self, block_id: uuid.UUID) -> list[Exercise]:
         """
         List all exercises in a specific block, ordered by position_in_block.
         """
         return self.dao.list_by_block(block_id)
 
-    def get_exercise(self, exercise_id: int) -> Exercise | None:
+    def get_exercise(self, exercise_id: uuid.UUID) -> Exercise | None:
         """
         Retrieve a single exercise by ID.
         Returns None if not found.
@@ -42,8 +43,8 @@ class ExerciseService:
         self,
         *,
         exercise_type: ExerciseType,
-        session_id: int,
-        block_id: int | None = None,
+        session_id: uuid.UUID,
+        block_id: uuid.UUID | None = None,
         position: int | None = None,
         position_in_block: int | None = None,
         weight_kg: float | None = None,
@@ -130,7 +131,7 @@ class ExerciseService:
     # -------------------------
     def update_exercise(
         self,
-        exercise_id: int,
+        exercise_id: uuid.UUID,
         *,
         exercise_type: ExerciseType | None = None,
         position: int | None = None,
@@ -162,22 +163,23 @@ class ExerciseService:
         # Update position_in_block
         # -------------------------
         if position_in_block is not None and position_in_block != old_pos_in_block:
-            total = self.dao.count_by_block(block_id or 0) - 1
-            if position_in_block < 0 or position_in_block > total:
-                raise ValueError("Invalid position_in_block")
-            for ex in sorted(
-                (ex for ex in self.dao.list_by_session(session_id)
-                 if ex.id != exercise.id and ex.block_id == block_id),
-                key=lambda e: e.position_in_block or 0,
-                reverse=old_pos_in_block > position_in_block
-            ):
-                pos = ex.position_in_block or 0
-                if old_pos_in_block < position_in_block and old_pos_in_block < pos <= position_in_block:
-                    ex.position_in_block = pos - 1
-                elif old_pos_in_block > position_in_block and position_in_block <= pos < old_pos_in_block:
-                    ex.position_in_block = pos + 1
-                self.dao.update(ex)
-            exercise.position_in_block = position_in_block
+            if block_id is not None : 
+                total = self.dao.count_by_block(block_id) - 1
+                if position_in_block < 0 or position_in_block > total:
+                    raise ValueError("Invalid position_in_block")
+                for ex in sorted(
+                    (ex for ex in self.dao.list_by_session(session_id)
+                    if ex.id != exercise.id and ex.block_id == block_id),
+                    key=lambda e: e.position_in_block or 0,
+                    reverse=old_pos_in_block > position_in_block
+                ):
+                    pos = ex.position_in_block or 0
+                    if old_pos_in_block < position_in_block and old_pos_in_block < pos <= position_in_block:
+                        ex.position_in_block = pos - 1
+                    elif old_pos_in_block > position_in_block and position_in_block <= pos < old_pos_in_block:
+                        ex.position_in_block = pos + 1
+                    self.dao.update(ex)
+                exercise.position_in_block = position_in_block
 
         # -------------------------
         # Update global position for free exercise
@@ -226,7 +228,7 @@ class ExerciseService:
     # -------------------------
     # Delete
     # -------------------------
-    def delete_exercise(self, exercise_id: int) -> None:
+    def delete_exercise(self, exercise_id: uuid.UUID) -> None:
         """
         Delete an exercise and shift remaining exercises and blocks to fill the gap.
         Handles exercises inside a block and free exercises differently.

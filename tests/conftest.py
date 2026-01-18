@@ -2,6 +2,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from src.main import app
+from uuid import uuid4
 
 from unittest.mock import MagicMock
 
@@ -206,3 +207,34 @@ def block_dao(mock_dbs):
 def exercise_dao(mock_dbs):
     """ExerciseDAO avec DB mockée."""
     return ExerciseDAO(mock_dbs["exercise"])
+
+@pytest.fixture
+def user_id():
+    """Id de type uuid"""
+    return str(uuid4())
+
+@pytest.fixture
+def session_id():
+    """Id de type uuid"""
+    return str(uuid4())
+
+
+@pytest.fixture
+def block_id():
+    """Id de type uuid"""
+    return str(uuid4())
+
+@pytest.fixture
+def exercise_id():
+    """Id de type uuid"""
+    return str(uuid4())
+
+@pytest.fixture
+def other_exercise_id():
+    """Id de type uuid"""
+    return str(uuid4())
+
+@pytest.fixture
+def location_id():
+    """Id de type uuid"""
+    return str(uuid4())

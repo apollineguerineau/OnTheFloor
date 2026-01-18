@@ -1,5 +1,6 @@
 from sqlalchemy.orm import Session
 from src.data.models import User
+import uuid
 
 class UserDAO:
     def __init__(self, db: Session):
@@ -20,6 +21,6 @@ class UserDAO:
         return user
 
 
-    def get_by_id(self,user_id: int) -> User | None:
+    def get_by_id(self,user_id: uuid.UUID) -> User | None:
         return self.db.get(User, user_id)
 
