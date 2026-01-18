@@ -5,7 +5,7 @@ from datetime import date
 from src.api.deps import get_db
 from src.api.schemas.session import SessionCreate, SessionRead, SessionUpdate
 from src.services.session_service import SessionService
-
+import uuid
 router = APIRouter(prefix="/sessions", tags=["sessions"])
 
 
@@ -21,7 +21,7 @@ def create_session(
 
 
 @router.get("/{session_id}", response_model=SessionRead)
-def get_session(session_id: int, db: DBSession = Depends(get_db)):
+def get_session(session_id: uuid.UUID, db: DBSession = Depends(get_db)):
     session = SessionService(db).get_session(session_id)
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
@@ -31,7 +31,7 @@ def get_session(session_id: int, db: DBSession = Depends(get_db)):
 @router.get("/by-date/", response_model=list[SessionRead])
 def get_session_by_date(
     session_date: date = Query(...),
-    user_id: int = Query(...),
+    user_id: uuid.UUID = Query(...),
     db: DBSession = Depends(get_db),
 ):
     service = SessionService(db)
@@ -42,8 +42,8 @@ def get_session_by_date(
 
 @router.get("/by-location/", response_model=list[SessionRead])
 def get_sessions_by_location(
-    location_id: int = Query(...),
-    user_id: int = Query(...),
+    location_id: uuid.UUID = Query(...),
+    user_id: uuid.UUID = Query(...),
     db: DBSession = Depends(get_db)
 ):
     service = SessionService(db)
@@ -51,13 +51,13 @@ def get_sessions_by_location(
 
 
 @router.get("/user/{user_id}", response_model=list[SessionRead])
-def list_sessions_by_user(user_id: int, db: DBSession = Depends(get_db)):
+def list_sessions_by_user(user_id: uuid.UUID, db: DBSession = Depends(get_db)):
     return SessionService(db).list_sessions_by_user(user_id)
 
 
 @router.patch("/{session_id}", response_model=SessionRead)
 def update_session(
-    session_id: int,
+    session_id: uuid.UUID,
     payload: SessionUpdate,
     db: DBSession = Depends(get_db),
 ):
@@ -70,7 +70,7 @@ def update_session(
 
 
 @router.delete("/{session_id}", status_code=204)
-def delete_session(session_id: int, db: DBSession = Depends(get_db)):
+def delete_session(session_id: uuid.UUID, db: DBSession = Depends(get_db)):
     try:
         SessionService(db).delete_session(session_id)
     except ValueError as e:

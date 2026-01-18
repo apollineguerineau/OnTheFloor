@@ -1,5 +1,6 @@
 from pydantic import BaseModel, Field
 from src.data.models import LocationType
+import uuid
 
 class LocationCreate(BaseModel):
     name: str = Field(..., description="Name of the location")
@@ -12,7 +13,7 @@ class LocationCreate(BaseModel):
     }
 
 class LocationRead(BaseModel):
-    id: int
+    id: uuid.UUID
     name: str
     address: str | None
     location_type: LocationType

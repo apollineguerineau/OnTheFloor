@@ -1,5 +1,6 @@
 from sqlalchemy.orm import Session as DBSession
 from sqlalchemy import select, func
+import uuid
 
 from src.data.models import Exercise, Block
 
@@ -14,10 +15,10 @@ class ExerciseDAO:
         self.db.refresh(exercise)
         return exercise
 
-    def get_by_id(self, exercise_id: int) -> Exercise | None:
+    def get_by_id(self, exercise_id: uuid.UUID) -> Exercise | None:
         return self.db.get(Exercise, exercise_id)
 
-    def list_by_session(self, session_id: int) -> list[Exercise]:
+    def list_by_session(self, session_id: uuid.UUID) -> list[Exercise]:
         # Tri par position dans le block si nécessaire, sinon par position globale
         stmt = (
             select(Exercise)
@@ -26,7 +27,7 @@ class ExerciseDAO:
         )
         return list(self.db.scalars(stmt))
 
-    def list_by_block(self, block_id: int) -> list[Exercise]:
+    def list_by_block(self, block_id: uuid.UUID) -> list[Exercise]:
         stmt = (
             select(Exercise)
             .where(Exercise.block_id == block_id)
@@ -43,11 +44,11 @@ class ExerciseDAO:
         self.db.delete(exercise)
         self.db.commit()
 
-    def validate_block_session(self, block_id: int, session_id: int) -> bool:
+    def validate_block_session(self, block_id: uuid.UUID, session_id: uuid.UUID) -> bool:
         block = self.db.get(Block, block_id)
         return block is not None and block.session_id == session_id
     
-    def count_free_by_session(self, session_id: int) -> int:
+    def count_free_by_session(self, session_id: uuid.UUID) -> int:
         return self.db.scalars(
             select(func.count())
             .select_from(Exercise)
@@ -58,7 +59,7 @@ class ExerciseDAO:
         ).one()
 
 
-    def count_by_block(self, block_id: int) -> int:
+    def count_by_block(self, block_id: uuid.UUID) -> int:
         return self.db.scalars(
             select(func.count())
             .select_from(Exercise)

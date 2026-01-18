@@ -3,7 +3,7 @@ from sqlalchemy import select
 from datetime import date
 
 from src.data.models import Session
-
+import uuid
 
 class SessionDAO:
     def __init__(self, db: DBSession):
@@ -15,14 +15,14 @@ class SessionDAO:
         self.db.refresh(session)
         return session
 
-    def get_by_id(self, session_id: int) -> Session | None:
+    def get_by_id(self, session_id: uuid.UUID) -> Session | None:
         return self.db.get(Session, session_id)
     
     def get_by_date_and_user(
         self,
         *,
         session_date: date,
-        user_id: int,
+        user_id: uuid.UUID,
     ) -> list["Session"]:
         stmt = (
             select(Session)
@@ -31,11 +31,11 @@ class SessionDAO:
         )
         return list(self.db.scalars(stmt).all())
 
-    def list_by_user(self, user_id: int) -> list[Session]:
+    def list_by_user(self, user_id: uuid.UUID) -> list[Session]:
         stmt = select(Session).where(Session.user_id == user_id)
         return list(self.db.scalars(stmt))
 
-    def get_by_location_and_user(self, location_id: int, user_id: int) -> list["Session"]:
+    def get_by_location_and_user(self, location_id: uuid.UUID, user_id: uuid.UUID) -> list["Session"]:
         """
         Return all sessions for a given location and user.
         """

@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 from src.data.dao.location_dao import LocationDAO
 from src.data.models import Location
-
+import uuid
 
 class LocationService:
     def __init__(self, db: Session):
@@ -32,7 +32,7 @@ class LocationService:
         )
         return self.dao.create(location)
 
-    def get_location(self, location_id: int) -> Location | None:
+    def get_location(self, location_id: uuid.UUID) -> Location | None:
         """
         Retrieve a Location by ID.
         """
@@ -44,7 +44,7 @@ class LocationService:
         """
         return self.dao.list()
 
-    def delete_location(self, location_id: int) -> None:
+    def delete_location(self, location_id: uuid.UUID) -> None:
         """
         Delete a location by ID. Raises ValueError if not found.
         """

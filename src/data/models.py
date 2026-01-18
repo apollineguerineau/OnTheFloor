@@ -11,6 +11,8 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import relationship, DeclarativeBase, Mapped, mapped_column
 import enum
+import uuid
+from sqlalchemy.dialects.postgresql import UUID
 
 # -------------------
 # Base declarative
@@ -104,19 +106,28 @@ class LocationType(str, enum.Enum):
 class User(Base):
     __tablename__ = "users"
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4,
+    )
     username: Mapped[str] = mapped_column(String(50), nullable=False, unique=True)
 
     sessions: Mapped[list["Session"]] = relationship(
         "Session",
         back_populates="user",
+        cascade="all, delete-orphan",
     )
 
 
 class Location(Base):
     __tablename__ = "locations"
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4,
+    )
     name: Mapped[str] = mapped_column(String(100), nullable=False)
     address: Mapped[str | None] = mapped_column(String(255), nullable=True)
     location_type: Mapped[LocationType] = mapped_column(
@@ -133,46 +144,59 @@ class Location(Base):
 class Session(Base):
     __tablename__ = "sessions"
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4,
+    )
+
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("users.id"),
+        nullable=False,
+        index=True,
+    )
+
+    location_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("locations.id"),
+        nullable=True,
+        index=True,
+    )
+
     name: Mapped[str] = mapped_column(String(100), nullable=False)
     date: Mapped[Date] = mapped_column(Date, nullable=False)
     session_type: Mapped[SessionType] = mapped_column(
         Enum(SessionType),
         nullable=False,
     )
-    user_id: Mapped[int] = mapped_column(
-        Integer,
-        ForeignKey("users.id"),
-        index=True,
-    )
-    location_id: Mapped[int | None] = mapped_column(
-        Integer,
-        ForeignKey("locations.id"),
-        nullable=True,
-        index=True,
-    )
+    
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     user: Mapped["User"] = relationship(
         "User",
         back_populates="sessions",
     )
+
     location: Mapped["Location | None"] = relationship(
         "Location",
         back_populates="sessions",
     )
+
     blocks: Mapped[list["Block"]] = relationship(
-    "Block",
-    back_populates="session",
-    order_by="Block.position",
-    cascade="all, delete-orphan",
+        "Block",
+        back_populates="session",
+        order_by="Block.position",
+        cascade="all, delete-orphan",
     )
+
     exercises: Mapped[list["Exercise"]] = relationship(
-    "Exercise",
-    back_populates="session",
-    order_by="Exercise.position",
-    cascade="all, delete-orphan",
+        "Exercise",
+        back_populates="session",
+        order_by="Exercise.position",
+        cascade="all, delete-orphan",
     )
+
     photos: Mapped[list["Photo"]] = relationship(
         "Photo",
         back_populates="session",
@@ -182,6 +206,7 @@ class Session(Base):
 
 class Block(Base):
     __tablename__ = "blocks"
+
     __table_args__ = (
         UniqueConstraint(
             "session_id",
@@ -191,24 +216,33 @@ class Block(Base):
         Index("ix_block_position", "position"),
     )
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4,
+    )
+
+    session_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("sessions.id"),
+        nullable=False,
+        index=True,
+    )
+
     block_type: Mapped[BlockType] = mapped_column(
         Enum(BlockType),
         nullable=False,
     )
     duration: Mapped[float | None] = mapped_column(Float, nullable=True)
     position: Mapped[int] = mapped_column(Integer, nullable=False)
-    session_id: Mapped[int] = mapped_column(
-        Integer,
-        ForeignKey("sessions.id", ondelete="CASCADE"),
-        index=True,
-    )
+
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     session: Mapped["Session"] = relationship(
         "Session",
         back_populates="blocks",
     )
+
     exercises: Mapped[list["Exercise"]] = relationship(
         "Exercise",
         back_populates="block",
@@ -221,20 +255,35 @@ class Exercise(Base):
     __tablename__ = "exercises"
 
     __table_args__ = (
-        # Index useful for ordering inside a block
         Index("ix_exercise_block_position", "block_id", "position_in_block"),
-        # Index useful for ordering free exercises in a session
         Index("ix_exercise_session_position", "session_id", "position"),
     )
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4,
+    )
+
+    session_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("sessions.id"),
+        nullable=False,
+        index=True,
+    )
+
+    block_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("blocks.id"),
+        nullable=True,
+        index=True,
+    )
 
     exercise_type: Mapped[ExerciseType] = mapped_column(
         Enum(ExerciseType),
         nullable=False,
     )
 
-    # Metrics
     weight_kg: Mapped[float | None] = mapped_column(Float, nullable=True)
     repetitions: Mapped[int | None] = mapped_column(Integer, nullable=True)
     duration_seconds: Mapped[float | None] = mapped_column(Float, nullable=True)
@@ -242,20 +291,6 @@ class Exercise(Base):
 
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
 
-    # Relations
-    session_id: Mapped[int] = mapped_column(
-        ForeignKey("sessions.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True,
-    )
-
-    block_id: Mapped[int | None] = mapped_column(
-        ForeignKey("blocks.id", ondelete="CASCADE"),
-        nullable=True,
-        index=True,
-    )
-
-    # Temporal ordering
     position: Mapped[int | None] = mapped_column(
         Integer,
         nullable=True,
@@ -268,7 +303,6 @@ class Exercise(Base):
         comment="Position inside a block (only if block_id is not null)",
     )
 
-    # ORM relations
     session: Mapped["Session"] = relationship(
         "Session",
         back_populates="exercises",
@@ -293,17 +327,24 @@ class Exercise(Base):
             )
 
 
-
 class Photo(Base):
     __tablename__ = "photos"
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4,
+    )
+
     path: Mapped[str] = mapped_column(String(255), nullable=False)
-    session_id: Mapped[int] = mapped_column(
-        Integer,
-        ForeignKey("sessions.id", ondelete="CASCADE"),
+
+    session_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("sessions.id"),
+        nullable=False,
         index=True,
     )
+
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     session: Mapped["Session"] = relationship(

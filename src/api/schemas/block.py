@@ -1,11 +1,12 @@
 from pydantic import BaseModel, Field
 from src.data.models import BlockType
+import uuid
 
 
 class BlockCreate(BaseModel):
     block_type: BlockType = Field(..., description="Type of the block")
     position: int| None = Field(None, description="Position of the block within the session")
-    session_id: int = Field(..., description="ID of the session this block belongs to")
+    session_id: uuid.UUID = Field(..., description="ID of the session this block belongs to")
     duration: float | None = Field(
         None,
         description="Optional duration of the block in minutes",
@@ -46,10 +47,10 @@ class BlockUpdate(BaseModel):
 
 
 class BlockRead(BaseModel):
-    id: int
+    id: uuid.UUID
     block_type: BlockType
     position: int
-    session_id: int
+    session_id: uuid.UUID
     duration: float | None
     notes: str | None
 

@@ -2,6 +2,7 @@ from sqlalchemy.orm import Session
 from src.data.dao.user_dao import UserDAO
 from src.data.models import User
 from src.api.schemas.user import UserCreate
+import uuid
 
 class UserService:
     def __init__(self, db: Session):
@@ -15,5 +16,5 @@ class UserService:
 
         return self.dao.create(dto.username)
    
-    def get_user(self,user_id: int) -> User | None:
+    def get_user(self,user_id: uuid.UUID) -> User | None:
         return self.dao.get_by_id(user_id)
