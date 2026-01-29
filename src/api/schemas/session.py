@@ -7,7 +7,6 @@ class SessionCreate(BaseModel):
     name: str
     date: d
     session_type: SessionType
-    user_id: uuid.UUID
     notes: str | None = None
     location_id : uuid.UUID | None = None
 

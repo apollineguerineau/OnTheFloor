@@ -119,6 +119,11 @@ class User(Base):
         cascade="all, delete-orphan",
     )
 
+    hashed_password: Mapped[str] = mapped_column(
+        String(255),
+        nullable=False,
+    )
+
 
 class Location(Base):
     __tablename__ = "locations"

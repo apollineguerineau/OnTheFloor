@@ -1,0 +1,4 @@
+- injector for all deps
+- session attribute of repositories, no more dependency of routers
+- dao receive and return entities and not models anymore
+- authentification in all routes

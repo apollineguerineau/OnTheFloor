@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session as DBSession
 from src.data.dao.session_dao import SessionDAO
 from src.data.models import Session, SessionType
 from src.services.location_service import LocationService
+from src.api.schemas.session import SessionCreate, SessionUpdate, SessionRead
 import uuid
 
 class SessionService:
@@ -13,36 +14,38 @@ class SessionService:
 
     def create_session(
         self,
-        *,
-        name: str,
-        date: d,
-        session_type: SessionType,
         user_id: uuid.UUID,
-        notes: str | None = None,
-        location_id: uuid.UUID | None = None,
+        session_create : SessionCreate
     ) -> Session:
         # Validate location using LocationService
-        if location_id is not None:
-            location = self.location_service.get_location(location_id)
+        if session_create.location_id is not None:
+            location = self.location_service.get_location(session_create.location_id)
             if location is None:
-                raise ValueError(f"Location with id {location_id} not found")
+                raise ValueError(f"Location with id {session_create.location_id} not found")
 
         session = Session(
-            name=name,
-            date=date,
-            session_type=session_type,
+            name=session_create.name,
+            date=session_create.date,
+            session_type=session_create.session_type,
             user_id=user_id,
-            notes=notes,
-            location_id=location_id,
+            notes=session_create.notes,
+            location_id=session_create.location_id,
         )
         return self.dao.create(session)
+    
+    def check_user_is_owner(self, user_id: uuid.UUID, session_id: uuid.UUID) -> None:
+        session = self.dao.get_by_id(session_id)
+        if not session:
+            raise ValueError("Session not found")
+        if session.user_id != user_id:
+            raise PermissionError("User does not have access to this session")
 
-    def get_session(self, session_id: uuid.UUID) -> Session | None:
+    def get_session(self, user_id : uuid.UUID, session_id: uuid.UUID) -> Session | None:
+        self.check_user_is_owner(user_id, session_id)
         return self.dao.get_by_id(session_id)
 
     def get_sessions_by_date(
         self,
-        *,
         session_date: d,
         user_id: uuid.UUID,
     ) -> list[Session]:
@@ -63,36 +66,34 @@ class SessionService:
     def update_session(
         self,
         session_id: uuid.UUID,
-        *,
-        session_type : SessionType| None = None,
-        name: str | None = None,
-        notes: str | None = None,
-        date: d | None = None,
-        location_id: uuid.UUID | None = None,
+        user_id : uuid.UUID,
+        session_update : SessionUpdate
     ) -> Session:
+        self.check_user_is_owner(user_id, session_id)
         session = self.dao.get_by_id(session_id)
         if not session:
             raise ValueError("Session not found")
 
-        if session_type is not None:
-            session.session_type = session_type
-        if name is not None:
-            session.name = name
-        if notes is not None:
-            session.notes = notes
-        if date is not None:
-            session.date = date  # type: ignore[assignment]
+        if session_update.session_type is not None:
+            session.session_type = session_update.session_type
+        if session_update.name is not None:
+            session.name = session_update.name
+        if session_update.notes is not None:
+            session.notes = session_update.notes
+        if session_update.date is not None:
+            session.date = session_update.date  # type: ignore[assignment]
 
-        if location_id is not None:
+        if session_update.location_id is not None:
             # Validate location via LocationService
-            location = self.location_service.get_location(location_id)
+            location = self.location_service.get_location(session_update.location_id)
             if location is None:
-                raise ValueError(f"Location with id {location_id} not found")
-            session.location_id = location_id
+                raise ValueError(f"Location with id {session_update.location_id} not found")
+            session.location_id = session_update.location_id
 
         return self.dao.update(session)
 
-    def delete_session(self, session_id: uuid.UUID) -> None:
+    def delete_session(self, user_id: uuid.UUID, session_id: uuid.UUID) -> None:
+        self.check_user_is_owner(user_id, session_id)
         session = self.dao.get_by_id(session_id)
         if not session:
             raise ValueError("Session not found")

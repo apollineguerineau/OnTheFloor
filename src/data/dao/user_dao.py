@@ -13,8 +13,8 @@ class UserDAO:
             .one_or_none()
         )
 
-    def create(self, username: str) -> User:
-        user = User(username=username)
+    def create(self, username: str, hashed_password) -> User:
+        user = User(username=username, hashed_password=hashed_password)
         self.db.add(user)
         self.db.commit()
         self.db.refresh(user)
