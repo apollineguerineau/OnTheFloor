@@ -17,14 +17,3 @@ class SessionUpdate(BaseModel):
     notes: str | None = None
     location_id : uuid.UUID | None = None
 
-class SessionRead(BaseModel):
-    id: uuid.UUID
-    name: str
-    date: d
-    session_type: SessionType
-    user_id: uuid.UUID
-    notes: str | None = None
-    location_id : uuid.UUID | None = None
-
-    class Config:
-        from_attributes = True

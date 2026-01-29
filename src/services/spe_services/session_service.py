@@ -3,14 +3,16 @@ from sqlalchemy.orm import Session as DBSession
 
 from src.data.dao.session_dao import SessionDAO
 from src.data.models import Session, SessionType
-from src.services.location_service import LocationService
-from src.api.schemas.session import SessionCreate, SessionUpdate, SessionRead
+from src.services.spe_services.location_service import LocationService
+from src.services.domain_services.ownership_service import OwnershipService
+from src.api.schemas.session import SessionCreate, SessionUpdate, SessionEntity
 import uuid
 
 class SessionService:
-    def __init__(self, db: DBSession):
-        self.dao = SessionDAO(db)
-        self.location_service = LocationService(db)
+    def __init__(self, session_dao : SessionDAO, ownership_service : OwnershipService, location_service : LocationService):
+        self.session_dao = session_dao
+        self.ownership_service = ownership_service
+        self.location_service = location_service
 
     def create_session(
         self,
@@ -33,15 +35,8 @@ class SessionService:
         )
         return self.dao.create(session)
     
-    def check_user_is_owner(self, user_id: uuid.UUID, session_id: uuid.UUID) -> None:
-        session = self.dao.get_by_id(session_id)
-        if not session:
-            raise ValueError("Session not found")
-        if session.user_id != user_id:
-            raise PermissionError("User does not have access to this session")
-
     def get_session(self, user_id : uuid.UUID, session_id: uuid.UUID) -> Session | None:
-        self.check_user_is_owner(user_id, session_id)
+        self.ownership_service.check_user_is_owner(user_id, session_id)
         return self.dao.get_by_id(session_id)
 
     def get_sessions_by_date(
@@ -69,7 +64,7 @@ class SessionService:
         user_id : uuid.UUID,
         session_update : SessionUpdate
     ) -> Session:
-        self.check_user_is_owner(user_id, session_id)
+        self.ownership_service.check_user_is_owner(user_id, session_id)
         session = self.dao.get_by_id(session_id)
         if not session:
             raise ValueError("Session not found")
@@ -93,7 +88,7 @@ class SessionService:
         return self.dao.update(session)
 
     def delete_session(self, user_id: uuid.UUID, session_id: uuid.UUID) -> None:
-        self.check_user_is_owner(user_id, session_id)
+        self.ownership_service.check_user_is_owner(user_id, session_id)
         session = self.dao.get_by_id(session_id)
         if not session:
             raise ValueError("Session not found")

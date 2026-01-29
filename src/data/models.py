@@ -14,6 +14,8 @@ import enum
 import uuid
 from sqlalchemy.dialects.postgresql import UUID
 
+from src.core.entities import BlockEntity, ExerciseEntity, SessionEntity, UserEntity, LocationEntity
+
 # -------------------
 # Base declarative
 # -------------------
@@ -124,6 +126,13 @@ class User(Base):
         nullable=False,
     )
 
+    def to_entity(self) -> UserEntity:
+        return UserEntity(
+            id=self.id,
+            username=self.username,
+            hashed_password=self.hashed_password,
+        )
+
 
 class Location(Base):
     __tablename__ = "locations"
@@ -144,6 +153,14 @@ class Location(Base):
         "Session",
         back_populates="location",
     )
+
+    def to_entity(self) -> LocationEntity:
+        return LocationEntity(
+            id=self.id,
+            name=self.name,
+            address=self.address,
+            location_type=self.location_type,
+        )
 
 
 class Session(Base):
@@ -208,6 +225,17 @@ class Session(Base):
         cascade="all, delete-orphan",
     )
 
+    def to_entity(self) -> SessionEntity:
+        return SessionEntity(
+            id=self.id,
+            user_id=self.user_id,
+            location_id=self.location_id,
+            name=self.name,
+            date=self.date,
+            session_type=self.session_type,
+            notes=self.notes,
+        )
+
 
 class Block(Base):
     __tablename__ = "blocks"
@@ -254,6 +282,17 @@ class Block(Base):
         order_by="Exercise.position",
         cascade="all, delete-orphan",
     )
+
+    def to_entity(self) -> BlockEntity:
+        return BlockEntity(
+            id=self.id,
+            session_id=self.session_id,
+            block_type=self.block_type,
+            position=self.position,
+            duration=self.duration,
+            notes=self.notes,
+        )
+
 
 
 class Exercise(Base):
@@ -330,6 +369,21 @@ class Exercise(Base):
             raise ValueError(
                 "Free exercise cannot have position_in_block"
             )
+        
+    def to_entity(self) -> ExerciseEntity:
+        return ExerciseEntity(
+            id=self.id,
+            session_id=self.session_id,
+            block_id=self.block_id,
+            exercise_type=self.exercise_type,
+            weight_kg=self.weight_kg,
+            repetitions=self.repetitions,
+            duration_seconds=self.duration_seconds,
+            distance_meters=self.distance_meters,
+            notes=self.notes,
+            position=self.position,
+            position_in_block=self.position_in_block,
+        )
 
 
 class Photo(Base):

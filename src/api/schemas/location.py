@@ -11,14 +11,3 @@ class LocationCreate(BaseModel):
         "populate_by_name": True,
         "extra": "forbid",
     }
-
-class LocationRead(BaseModel):
-    id: uuid.UUID
-    name: str
-    address: str | None
-    location_type: LocationType
-
-    model_config = {
-        "populate_by_name": True,
-        "extra": "forbid",
-    }

@@ -1,4 +1,13 @@
-- injector for all deps
-- session attribute of repositories, no more dependency of routers
-- dao receive and return entities and not models anymore
-- authentification in all routes
+- modifs dans les services : 
+    - vérifier l'ownership pou rles routes nécessaires
+    - la création doit renvoyer l'id
+    - la modif et suppression renvoient bool
+    - on recoit les objets en schéma et plus en payload
+    - la dao doit recevoir des entities et elle renvoit des entities
+    - on transmet les entities aux routers et plus des schémas read (ex UserRead n'existe plus)
+
+- pour tester les tokens il va falloir un user en base avec son password
+- route pour créer nouvel utilisateur (permet de hasher le password, etc.)
+- route de login (qui donne le token ?)
+
+- authorize va dpendre de la route, par exemple je veux que seul les user admin puissent créer des locations

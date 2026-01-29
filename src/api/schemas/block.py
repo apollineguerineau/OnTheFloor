@@ -44,18 +44,3 @@ class BlockUpdate(BaseModel):
         "populate_by_name": True,
         "extra": "forbid",
     }
-
-
-class BlockRead(BaseModel):
-    id: uuid.UUID
-    block_type: BlockType
-    position: int
-    session_id: uuid.UUID
-    duration: float | None
-    notes: str | None
-
-    model_config = {
-        "populate_by_name": True,
-        "from_attributes": True,
-        "extra": "forbid",
-    }

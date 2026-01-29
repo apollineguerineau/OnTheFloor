@@ -1,4 +1,3 @@
-from src.core.database import SessionLocal
 from fastapi import Depends, HTTPException
 from fastapi.security import OAuth2PasswordBearer
 
@@ -6,14 +5,6 @@ from src.security.jwt import decode_access_token
 from src.security.schema import Credentials
 from fastapi import Depends, HTTPException, status
 from src.security.jwt import decode_access_token, InvalidTokenError
-
-
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
 
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/login")

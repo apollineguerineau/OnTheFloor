@@ -1,82 +1,92 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy.orm import Session as DBSession
 from datetime import date
-
-from src.api.deps import get_db
-from src.api.schemas.session import SessionCreate, SessionRead, SessionUpdate
-from src.services.session_service import SessionService
+from src.api.schemas.session import SessionCreate, SessionEntity, SessionUpdate
 import uuid
 from src.api.deps import authenticate
 from src.security.schema import Credentials
+from src.core.injector import injector
+
 
 router = APIRouter(prefix="/sessions", tags=["sessions"])
 
 
-@router.post("/", response_model=SessionRead)
+@router.post("/")
 def create_session(
     session_create: SessionCreate,
-    db: DBSession = Depends(get_db),
     credentials: Credentials = Depends(authenticate)
-):
-    user_id = credentials.user_id
+)-> uuid.UUID:
     try:
-        return SessionService(db).create_session(user_id, session_create)
+        session_service = injector.exercise_service()
+        user_id = credentials.user_id
+        return session_service.create_session(user_id, session_create)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.get("/{session_id}", response_model=SessionRead)
+@router.get("/{session_id}", response_model=SessionEntity)
 def get_session(session_id: uuid.UUID, 
-                db: DBSession = Depends(get_db),
                 credentials: Credentials = Depends(authenticate)):
-    user_id = credentials.user_id
-    session = SessionService(db).get_session(user_id, session_id)
-    if not session:
-        raise HTTPException(status_code=404, detail="Session not found")
-    return session
+    try:
+        session_service = injector.exercise_service()
+        user_id = credentials.user_id
+        session = session_service.get_session(user_id, session_id)
+        if not session:
+            raise HTTPException(status_code=404, detail="Session not found")
+        return session
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
-
-@router.get("/by-date/", response_model=list[SessionRead])
+@router.get("/by-date/", response_model=list[SessionEntity])
 def get_session_by_date(
     session_date: date = Query(...),
     credentials: Credentials = Depends(authenticate),
-    db: DBSession = Depends(get_db),
 ):
-    user_id = credentials.user_id
-    service = SessionService(db)
-    return service.get_sessions_by_date(
-        session_date=session_date,
-        user_id=user_id,
-    )
+    try:
+        session_service = injector.exercise_service()
+        user_id = credentials.user_id
+        return session_service.get_sessions_by_date(
+            session_date=session_date,
+            user_id=user_id,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
-@router.get("/by-location/", response_model=list[SessionRead])
+@router.get("/by-location/", response_model=list[SessionEntity])
 def get_sessions_by_location(
     location_id: uuid.UUID = Query(...),
     credentials: Credentials = Depends(authenticate),
-    db: DBSession = Depends(get_db)
+     
 ):
-    user_id = credentials.user_id
-    service = SessionService(db)
-    return service.get_sessions_by_location(location_id=location_id, user_id=user_id)
+    try:
+        session_service = injector.exercise_service()
+        user_id = credentials.user_id
+        return session_service.get_sessions_by_location(location_id=location_id, user_id=user_id)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.get("/user/{user_id}", response_model=list[SessionRead])
-def list_sessions_by_user(db: DBSession = Depends(get_db),
+@router.get("/user/{user_id}", response_model=list[SessionEntity])
+def list_sessions_by_user(
                           credentials: Credentials = Depends(authenticate)):
-    user_id = credentials.user_id
-    return SessionService(db).list_sessions_by_user(user_id)
+    
+    try:
+        session_service = injector.exercise_service()
+        user_id = credentials.user_id
+        return session_service.list_sessions_by_user(user_id)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.patch("/{session_id}", response_model=SessionRead)
+@router.patch("/{session_id}")
 def update_session(
     session_id: uuid.UUID,
     session_update: SessionUpdate,
-    db: DBSession = Depends(get_db),
     credentials: Credentials = Depends(authenticate)
-):
-    user_id = credentials.user_id
+) -> bool:
     try:
-        return SessionService(db).update_session(
+        session_service = injector.exercise_service()
+        user_id = credentials.user_id
+        return session_service.update_session(
             session_id, user_id, session_update)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
@@ -84,11 +94,11 @@ def update_session(
 
 @router.delete("/{session_id}", status_code=204)
 def delete_session(session_id: uuid.UUID, 
-                   db: DBSession = Depends(get_db),
-                   credentials: Credentials = Depends(authenticate)):
-    user_id = credentials.user_id
+                   credentials: Credentials = Depends(authenticate)) -> bool:
     try:
-        SessionService(db).delete_session(user_id, session_id)
+        session_service = injector.exercise_service()
+        user_id = credentials.user_id
+        session_service.delete_session(user_id, session_id)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
 

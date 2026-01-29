@@ -8,11 +8,3 @@ class UserCreate(BaseModel):
 class UserLogin(BaseModel):
     username: str
     password: str
-
-class UserRead(BaseModel):
-    id: uuid.UUID
-    username: str
-
-    model_config = {
-        "from_attributes": True
-    }

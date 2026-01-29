@@ -1,35 +1,41 @@
-from sqlalchemy.orm import Session
-from src.data.models import Location
+from sqlalchemy.engine import Engine
 import uuid
 
+from src.data.models import Location
+from src.core.database import new_session
+from src.core.entities import LocationEntity
+
+
+
 class LocationDAO:
-    def __init__(self, db: Session):
-        self.db = db
+    def __init__(self, engine: Engine):
+        self.engine = engine
 
-    def create(self, location: Location) -> Location:
-        """
-        Persist a new Location in the database.
-        """
-        self.db.add(location)
-        self.db.commit()
-        self.db.refresh(location)
-        return location
+    def create(self, location_entity: LocationEntity) -> uuid.UUID:
+        with new_session(self.engine) as session:
+            model = Location(
+                name=location_entity.name,
+                address=location_entity.address,
+                location_type=location_entity.location_type,
+            )
+            session.add(model)
+            session.commit()
+            session.refresh(model)
+            return model.id
 
-    def get_by_id(self, location_id: uuid.UUID) -> Location | None:
-        """
-        Retrieve a Location by its primary key.
-        """
-        return self.db.query(Location).filter(Location.id == location_id).first()
+    def get_by_id(self, location_id: uuid.UUID) -> LocationEntity | None:
+        with new_session(self.engine) as session:
+            model = session.get(Location, location_id)
+            return model.to_entity() if model else None
 
-    def list(self) -> list[Location]:
-        """
-        List all Locations in the database.
-        """
-        return self.db.query(Location).all()
-    
-    def delete(self, location: Location) -> None:
-        """
-        Delete a Location from the database.
-        """
-        self.db.delete(location)
-        self.db.commit()
+    def list(self) -> list[LocationEntity]:
+        with new_session(self.engine) as session:
+            models = session.query(Location).all()
+            return [m.to_entity() for m in models]
+
+    def delete(self, location_id: uuid.UUID) -> None:
+        with new_session(self.engine) as session:
+            model = session.get(Location, location_id)
+            if model:
+                session.delete(model)
+                session.commit()
